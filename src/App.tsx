@@ -1,36 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
 import { Container, Stage } from "@inlet/react-pixi";
+import { viewSize } from "./constants";
 import { Kaleidoscope } from "./Kaleidoscope";
-export const viewSize = 1500;
 
 function App() {
-  const [screenSize, setscreenSize] = useState([0, 0]);
-  const [viewScale, setViewScale] = useState(1);
-
-  const reportWindowSize = useCallback(() => {
-    setscreenSize([document.body.clientWidth, document.body.clientHeight]);
-    const newGameScale =
-      Math.min(document.body.clientWidth, document.body.clientHeight) /
-      viewSize;
-    setViewScale(newGameScale);
-  }, []);
-  useEffect(() => {
-    window.addEventListener("resize", reportWindowSize);
-    return () => {
-      window.removeEventListener("resize", reportWindowSize);
-    };
-  }, [reportWindowSize]);
-
   return (
     <Stage
       options={{
         resolution: window.devicePixelRatio,
         autoDensity: true,
+        backgroundColor: 0xe6e6e6,
       }}
-      width={screenSize[0]}
-      height={screenSize[1]}
+      width={viewSize * 2}
+      height={viewSize * 2}
     >
-      <Container position={[0, 0]} scale={viewScale}>
+      {
+        //set position 0,0 at the center of Stage
+      }
+      <Container position={[viewSize, viewSize]}>
         <Kaleidoscope />
       </Container>
     </Stage>
