@@ -1,44 +1,82 @@
-import { Container } from "@inlet/react-pixi";
-import { useEffect, useState } from "react";
+import { Container, useTick } from "@inlet/react-pixi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  PARTS,
+  ROTATION_SPEED,
+  TRANSLATION_SPEED_X,
+  TRANSLATION_SPEED_Y,
+} from "./config";
+import { degreesToRadians } from "./math";
 import { Particle } from "./Particle";
-import { setFractal } from "./random";
-const particleCount = 150;
-const colors = [0xff6b6b, 0xffd93d, 0x6bcb77, 0x4d96ff];
-let int: any;
-const particles = [] as { size: number; color: number }[];
-for (let i = 0; i < particleCount; i++) {
-  particles.push({
-    size: Math.random(),
-    color: colors[Math.floor(Math.random() * colors.length)],
-  });
-}
 
 export const Kaleidoscope = () => {
-  const [noise, setNoise] = useState(1);
-
-  useEffect(() => {
-    int = setInterval(
-      () =>
-        setNoise((noise) => {
-          setFractal(noise);
-          return noise + 1;
-        }),
-      2000
-    );
-    return () => {
-      //@ts-ignore
-      int.removeInterval();
-    };
+  const [rotation, setRotation] = useState(0);
+  const [translation, setTranslation] = useState([0, 0]);
+  const [mouseTranslate, setMouseTranslation] = useState([0, 0]);
+  const stepPart = useMemo(() => {
+    return degreesToRadians(360 / PARTS);
   }, []);
+
+  const reflections = useMemo(() => {
+    const parts = [] as number[];
+    for (let i = 0; i < PARTS; i++) {
+      parts.push(i * stepPart);
+    }
+    return parts;
+  }, [stepPart]);
+
+  const updateKaleidoscope = useCallback(() => {
+    setRotation((current) => {
+      return current + Math.PI * ROTATION_SPEED;
+    });
+    setTranslation((current) => {
+      return [
+        current[0] + TRANSLATION_SPEED_X,
+        current[1] - TRANSLATION_SPEED_Y,
+      ];
+    });
+  }, []);
+  useTick(updateKaleidoscope);
+
+  const changeTranslate = useCallback((e) => {
+    setMouseTranslation([e.pageX, e.pageY]);
+  }, []);
+
+  const getInitialMousePosition = useCallback((e) => {
+    // document.removeEventListener("mouseover", getInitialMousePosition);
+    setMouseTranslation([e.pageX, e.pageY]);
+  }, []);
+  useEffect(() => {
+    document.addEventListener("mousemove", changeTranslate);
+    // document.addEventListener("mouseover", getInitialMousePosition);
+    return () => {
+      document.removeEventListener("mousemove", changeTranslate);
+    };
+  }, [changeTranslate, getInitialMousePosition]);
+
   return (
     <Container position={[0, 0]}>
-      {particles.map((particle, key) => {
+      {reflections.map((stepRotation) => {
         return (
           <Particle
-            size={particle.size}
-            color={particle.color}
-            key={noise * key}
-            noise={noise}
+            rotation={rotation + stepRotation}
+            flip={1}
+            translate={translation}
+            mouseTranslate={mouseTranslate}
+            stepPart={stepPart / 2}
+            key={`${stepRotation}|1`}
+          />
+        );
+      })}
+      {reflections.map((stepRotation) => {
+        return (
+          <Particle
+            rotation={rotation + stepRotation}
+            flip={-1}
+            translate={translation}
+            mouseTranslate={mouseTranslate}
+            stepPart={stepPart / 2}
+            key={`${stepRotation}|-1`}
           />
         );
       })}

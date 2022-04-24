@@ -1,1 +1,2 @@
-export const viewSize = 750; //half of canvas this is the max
+export const viewSize = 1000;
+export const sideSize = viewSize / 2;

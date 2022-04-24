@@ -1,97 +1,92 @@
-import { Container, Graphics } from "@inlet/react-pixi";
-import * as pixi from "pixi.js";
-
+import { Container, Graphics, Sprite } from "@inlet/react-pixi";
+import source from "./assets/source3.png";
 import {
   FunctionComponent,
   useCallback,
   useEffect,
-  useMemo,
+  useRef,
   useState,
 } from "react";
 import { viewSize } from "./constants";
-import { random } from "./random";
-
-const MAX_EDGE_SIZE = viewSize * 0.16;
-const MIN_EDGE_SIZE = viewSize * 0.04;
-const CORNER_NOISE_SIZE = viewSize * 0.1;
+import { degreesToRadians } from "./math";
 
 type Props = {
-  color: number;
-  size: number;
-  noise: number;
+  rotation: number;
+  stepPart: number;
+
+  flip: -1 | 1;
+  translate: number[];
+  mouseTranslate: number[];
 };
-export const Particle: FunctionComponent<Props> = ({ color, size, noise }) => {
-  const [x, setX] = useState(0);
-  const [y, setY] = useState(0);
-
-  const edgeSize = useMemo(() => {
-    return MIN_EDGE_SIZE + size * (MAX_EDGE_SIZE - MIN_EDGE_SIZE);
-  }, [size]);
-
+const uvGridMatrix = [
+  [-1, -1],
+  [-1, 0],
+  [-1, 1],
+  [0, -1],
+  [0, 0],
+  [0, 1],
+  [1, -1],
+  [1, 0],
+  [1, 1],
+];
+export const Particle: FunctionComponent<Props> = ({
+  rotation,
+  flip,
+  translate,
+  stepPart,
+  mouseTranslate,
+}) => {
+  const maskRef = useRef(null);
   const draw = useCallback(
-    (g, posX: number, posY: number) => {
+    (g, key: number) => {
       g.clear();
-      g.beginFill(color);
-      const xSign = Math.sign(posX);
-      const ySign = Math.sign(posY);
-
-      let cornerNoiseX = getCornerNoise(x + y);
-      let cornerNoiseY = getCornerNoise(x + y * 2);
-
-      g.moveTo(
-        posX - (edgeSize / 2 + cornerNoiseX) * xSign,
-        posY - (edgeSize / 2 + cornerNoiseY) * ySign
-      );
-      cornerNoiseX = getCornerNoise(x + y + 3);
-      cornerNoiseY = getCornerNoise(x + y * 2 + 3);
-      g.lineTo(
-        posX + (edgeSize / 2 + cornerNoiseX) * xSign,
-        posY - (edgeSize / 2 + cornerNoiseY) * ySign
-      );
-      cornerNoiseX = getCornerNoise(x + y + 4);
-      cornerNoiseY = getCornerNoise(x + y * 2 + 4);
-      g.lineTo(
-        posX + (edgeSize / 2 + cornerNoiseX) * xSign,
-        posY + (edgeSize / 2 + cornerNoiseY) * ySign
-      );
-      cornerNoiseX = getCornerNoise(x + y + 5);
-      cornerNoiseY = getCornerNoise(x + y * 2 + 6);
-      g.lineTo(
-        posX - (edgeSize / 2 + cornerNoiseX) * xSign,
-        posY + (edgeSize / 2 + cornerNoiseY) * ySign
-      );
+      g.beginFill(0x900000);
+      g.moveTo(0, 0);
+      g.arc(0, 0, viewSize * 2, degreesToRadians(0), stepPart);
+      g.lineTo(0, 0);
       g.endFill();
     },
-    [color, edgeSize, x, y]
+    [stepPart]
   );
 
-  useEffect(() => {
-    if (noise) {
-      setX(Math.random() * viewSize);
-      setY(Math.random() * viewSize);
-    }
-  }, [noise]);
-  const styleProps = useMemo(() => {
-    return {
-      blendMode: pixi.BLEND_MODES.MULTIPLY,
-      alphe: 0.6,
-    };
-  }, []);
-  return (
-    <Container position={[0, 0]}>
-      <Graphics {...styleProps} draw={(g) => draw(g, x, y)} />
-      <Graphics {...styleProps} draw={(g) => draw(g, -x, y)} />
-      <Graphics {...styleProps} draw={(g) => draw(g, x, -y)} />
-      <Graphics {...styleProps} draw={(g) => draw(g, -x, -y)} />
+  const [spriteTranslation, setSpriteTranslation] = useState(translate);
 
-      <Graphics {...styleProps} draw={(g) => draw(g, y, x)} />
-      <Graphics {...styleProps} draw={(g) => draw(g, y, -x)} />
-      <Graphics {...styleProps} draw={(g) => draw(g, -y, x)} />
-      <Graphics {...styleProps} draw={(g) => draw(g, -y, -x)} />
+  useEffect(() => {
+    const translateX = translate[0] + mouseTranslate[0];
+    const translateY = translate[1] + mouseTranslate[1];
+    const stepX = Math.floor(translateX / viewSize);
+    const stepY = Math.floor(translateY / viewSize);
+
+    setSpriteTranslation([
+      translateX - stepX * viewSize,
+      translateY - stepY * viewSize,
+    ]);
+  }, [mouseTranslate, translate]);
+
+  return (
+    <Container
+      position={[0, 0]}
+      mask={maskRef?.current}
+      rotation={rotation}
+      scale={[1, flip]}
+    >
+      <Graphics
+        name="mask"
+        draw={(g) => draw(g, 1)}
+        ref={maskRef}
+        scale={[1, 1]}
+      />
+      {uvGridMatrix.map((matrix) => (
+        <Sprite
+          image={source}
+          anchor={0.5}
+          x={spriteTranslation[0] + matrix[0] * viewSize}
+          y={spriteTranslation[1] + matrix[1] * viewSize}
+          width={viewSize}
+          height={viewSize}
+          key={`${matrix[0]}${matrix[1]}`}
+        />
+      ))}
     </Container>
   );
 };
-
-function getCornerNoise(iteration: number) {
-  return -CORNER_NOISE_SIZE / 2 + (random(iteration) * CORNER_NOISE_SIZE) / 2;
-}
