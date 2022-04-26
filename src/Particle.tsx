@@ -4,11 +4,13 @@ import {
   FunctionComponent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
-import { viewSize } from "./constants";
+import { sideSize, viewSize } from "./constants";
 import { degreesToRadians } from "./math";
+import { SCALE } from "./config";
 
 type Props = {
   rotation: number;
@@ -18,17 +20,6 @@ type Props = {
   translate: number[];
   mouseTranslate: number[];
 };
-const uvGridMatrix = [
-  [-1, -1],
-  [-1, 0],
-  [-1, 1],
-  [0, -1],
-  [0, 0],
-  [0, 1],
-  [1, -1],
-  [1, 0],
-  [1, 1],
-];
 export const Particle: FunctionComponent<Props> = ({
   rotation,
   flip,
@@ -38,11 +29,11 @@ export const Particle: FunctionComponent<Props> = ({
 }) => {
   const maskRef = useRef(null);
   const draw = useCallback(
-    (g, key: number) => {
+    (g) => {
       g.clear();
       g.beginFill(0x900000);
       g.moveTo(0, 0);
-      g.arc(0, 0, viewSize * 2, degreesToRadians(0), stepPart);
+      g.arc(0, 0, viewSize, degreesToRadians(0), stepPart);
       g.lineTo(0, 0);
       g.endFill();
     },
@@ -51,42 +42,43 @@ export const Particle: FunctionComponent<Props> = ({
 
   const [spriteTranslation, setSpriteTranslation] = useState(translate);
 
-  useEffect(() => {
-    const translateX = translate[0] + mouseTranslate[0];
-    const translateY = translate[1] + mouseTranslate[1];
-    const stepX = Math.floor(translateX / viewSize);
-    const stepY = Math.floor(translateY / viewSize);
+  const imageSize = useMemo(() => {
+    return sideSize * SCALE;
+  }, []);
 
-    setSpriteTranslation([
-      translateX - stepX * viewSize,
-      translateY - stepY * viewSize,
-    ]);
-  }, [mouseTranslate, translate]);
+  useEffect(() => {
+    const translateX = (translate[0] + mouseTranslate[0]) % imageSize;
+    const translateY = (translate[1] + mouseTranslate[1]) % imageSize;
+
+    setSpriteTranslation([translateX, translateY]);
+  }, [imageSize, mouseTranslate, translate]);
+
+  const uvGridMatrix = useMemo(() => {
+    const gridSize = Math.ceil(sideSize / imageSize) + 2; //2 extra sprite for margin transition
+    const uv = [] as [number, number][];
+    for (let u = 0; u < gridSize; u++) {
+      for (let v = 0; v < gridSize; v++) {
+        uv.push([u - 1, v - 1]);
+      }
+    }
+    return uv;
+  }, [imageSize]);
 
   return (
-    <Container
-      position={[0, 0]}
-      mask={maskRef?.current}
-      rotation={rotation}
-      scale={[1, flip]}
-    >
-      <Graphics
-        name="mask"
-        draw={(g) => draw(g, 1)}
-        ref={maskRef}
-        scale={[1, 1]}
-      />
-      {uvGridMatrix.map((matrix) => (
-        <Sprite
-          image={source}
-          anchor={0.5}
-          x={spriteTranslation[0] + matrix[0] * viewSize}
-          y={spriteTranslation[1] + matrix[1] * viewSize}
-          width={viewSize}
-          height={viewSize}
-          key={`${matrix[0]}${matrix[1]}`}
-        />
-      ))}
+    <Container mask={maskRef?.current} rotation={rotation} scale={[1, flip]}>
+      <Graphics name="mask" draw={draw} ref={maskRef} scale={[1, 1]} />
+      {uvGridMatrix.map((matrix, key) => {
+        return (
+          <Sprite
+            image={source}
+            x={spriteTranslation[0] + matrix[0] * imageSize}
+            y={spriteTranslation[1] + matrix[1] * imageSize}
+            width={imageSize}
+            height={imageSize}
+            key={`${matrix[0]}${matrix[1]}${key}`}
+          />
+        );
+      })}
     </Container>
   );
 };
