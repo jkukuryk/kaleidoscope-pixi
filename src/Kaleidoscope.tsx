@@ -3,8 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   PARTS,
   ROTATION_SPEED,
+  ROTATION,
   TRANSLATION_SPEED_X,
   TRANSLATION_SPEED_Y,
+  ANCHOR_X,
+  ANCHOR_Y,
 } from "./config";
 import { degreesToRadians } from "./math";
 import { Particle } from "./Particle";
@@ -59,9 +62,9 @@ export const Kaleidoscope = () => {
       {reflections.map((stepRotation) => {
         return (
           <Particle
-            rotation={rotation + stepRotation}
+            rotation={rotation + stepRotation + degreesToRadians(ROTATION)}
             flip={1}
-            translate={translation}
+            translate={[translation[0] + ANCHOR_X, translation[1] + ANCHOR_Y]}
             mouseTranslate={mouseTranslate}
             stepPart={stepPart / 2}
             key={`${stepRotation}|1`}
@@ -71,9 +74,9 @@ export const Kaleidoscope = () => {
       {reflections.map((stepRotation) => {
         return (
           <Particle
-            rotation={rotation + stepRotation}
+            rotation={rotation + stepRotation + degreesToRadians(ROTATION)}
             flip={-1}
-            translate={translation}
+            translate={[translation[0] + ANCHOR_X, translation[1] + ANCHOR_Y]}
             mouseTranslate={mouseTranslate}
             stepPart={stepPart / 2}
             key={`${stepRotation}|-1`}
