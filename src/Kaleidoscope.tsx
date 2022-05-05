@@ -62,7 +62,7 @@ export const Kaleidoscope = () => {
       {reflections.map((stepRotation) => {
         return (
           <Particle
-            rotation={rotation + stepRotation + degreesToRadians(ROTATION)}
+            rotation={rotation + stepRotation}
             flip={1}
             translate={[translation[0] + ANCHOR_X, translation[1] + ANCHOR_Y]}
             mouseTranslate={mouseTranslate}
@@ -74,7 +74,7 @@ export const Kaleidoscope = () => {
       {reflections.map((stepRotation) => {
         return (
           <Particle
-            rotation={rotation + stepRotation + degreesToRadians(ROTATION)}
+            rotation={rotation + stepRotation}
             flip={-1}
             translate={[translation[0] + ANCHOR_X, translation[1] + ANCHOR_Y]}
             mouseTranslate={mouseTranslate}

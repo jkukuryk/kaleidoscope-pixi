@@ -10,7 +10,7 @@ import {
 } from "react";
 import { sideSize, viewSize } from "./constants";
 import { degreesToRadians } from "./math";
-import { SCALE } from "./config";
+import { ROTATION, SCALE } from "./config";
 
 type Props = {
   rotation: number;
@@ -56,8 +56,8 @@ export const Particle: FunctionComponent<Props> = ({
   const uvGridMatrix = useMemo(() => {
     const gridSize = Math.ceil(sideSize / imageSize) + 2; //2 extra sprite for margin transition
     const uv = [] as [number, number][];
-    for (let u = 0; u < gridSize; u++) {
-      for (let v = 0; v < gridSize; v++) {
+    for (let u = -gridSize; u < gridSize; u++) {
+      for (let v = -gridSize; v < gridSize; v++) {
         uv.push([u - 1, v - 1]);
       }
     }
@@ -66,19 +66,21 @@ export const Particle: FunctionComponent<Props> = ({
 
   return (
     <Container mask={maskRef?.current} rotation={rotation} scale={[1, flip]}>
-      <Graphics name="mask" draw={draw} ref={maskRef} scale={[1, 1]} />
-      {uvGridMatrix.map((matrix, key) => {
-        return (
-          <Sprite
-            image={source}
-            x={spriteTranslation[0] + matrix[0] * imageSize}
-            y={spriteTranslation[1] + matrix[1] * imageSize}
-            width={imageSize}
-            height={imageSize}
-            key={`${matrix[0]}${matrix[1]}${key}`}
-          />
-        );
-      })}
+      <Graphics name="mask" draw={draw} ref={maskRef} />
+      <Container rotation={degreesToRadians(ROTATION)} anchor={0.5}>
+        {uvGridMatrix.map((matrix, key) => {
+          return (
+            <Sprite
+              image={source}
+              x={spriteTranslation[0] + matrix[0] * imageSize}
+              y={spriteTranslation[1] + matrix[1] * imageSize}
+              width={imageSize}
+              height={imageSize}
+              key={`${matrix[0]}${matrix[1]}${key}`}
+            />
+          );
+        })}
+      </Container>
     </Container>
   );
 };
