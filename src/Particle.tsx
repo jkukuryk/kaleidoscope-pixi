@@ -53,6 +53,7 @@ export const Particle: FunctionComponent<Props> = ({
 
   const [spriteTranslation, setSpriteTranslation] = useState(translate);
   const [sourceDimensions, setSourceDiamensions] = useState([0, 0]);
+  const [mirrorAxis, setMirrorAxis] = useState([0, 0]);
 
   useEffect(() => {
     // document.addEventListener("mouseover", getInitialMousePosition);
@@ -81,9 +82,18 @@ export const Particle: FunctionComponent<Props> = ({
 
   useEffect(() => {
     if (imageSize[0] > 0 && imageSize[1] > 0) {
-      const translateX = (translate[0] + mouseTranslate[0]) % imageSize[0];
-      const translateY = (translate[1] + mouseTranslate[1]) % imageSize[1];
-      setSpriteTranslation([translateX, translateY]);
+      const translateX = translate[0] * IMAGE_ANCHOR_X + mouseTranslate[0];
+      const translateY = translate[1] * IMAGE_ANCHOR_Y + mouseTranslate[1];
+
+      setMirrorAxis([
+        Math.floor(translateX / imageSize[0]) % 2 === 0 ? -1 : 1,
+        Math.floor(translateY / imageSize[1]) % 2 === 0 ? -1 : 1,
+      ]);
+
+      setSpriteTranslation([
+        translateX % imageSize[0],
+        translateY % imageSize[1],
+      ]);
     }
   }, [imageSize, mouseTranslate, translate]);
 
@@ -113,14 +123,22 @@ export const Particle: FunctionComponent<Props> = ({
   if (sourceDimensions[0] === 0) {
     return null;
   }
+  console.log(
+    "spriteTranslation",
+    spriteTranslation[0],
+    spriteTranslation[0] > imageSize[0] / 2
+  );
   return (
     <Container mask={maskRef?.current} rotation={rotation} scale={[1, flip]}>
       <Graphics name="mask" draw={draw} ref={maskRef} />
       <Container
         rotation={degreesToRadians(IMAGE_ROTATION) + imageRotation}
         anchor={0}
+        scale={[1, 1]}
       >
         {uvGridMatrix.map((matrix, key) => {
+          const mirrorX = matrix[0] % 2 === 0 ? -mirrorAxis[0] : mirrorAxis[0];
+          const mirrorY = matrix[1] % 2 === 0 ? -mirrorAxis[1] : mirrorAxis[1];
           return (
             <Sprite
               image={source}
@@ -131,7 +149,8 @@ export const Particle: FunctionComponent<Props> = ({
               width={imageSize[0]}
               height={imageSize[1]}
               key={`${matrix[0]}${matrix[1]}`}
-              anchor={[IMAGE_ANCHOR_X % 1, IMAGE_ANCHOR_Y % 1]}
+              anchor={0.5}
+              scale={[IMAGE_SCALE * mirrorX, IMAGE_SCALE * mirrorY]}
             />
           );
         })}
