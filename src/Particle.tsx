@@ -1,5 +1,5 @@
-import { Container, Graphics, Sprite } from "@inlet/react-pixi";
-import source from "./assets/source3.png";
+import { Container, Graphics, Sprite, useTick } from "@inlet/react-pixi";
+import source from "./assets/source2.jpg";
 import {
   FunctionComponent,
   useCallback,
@@ -10,7 +10,14 @@ import {
 } from "react";
 import { sideSize, viewSize } from "./constants";
 import { degreesToRadians } from "./math";
-import { ROTATION, SCALE } from "./config";
+import {
+  IMAGE_ANCHOR_X,
+  IMAGE_ANCHOR_Y,
+  IMAGE_ROTATION,
+  IMAGE_ROTATION_SPEED,
+  IMAGE_SCALE,
+} from "./config";
+import { Loader } from "@pixi/loaders";
 
 type Props = {
   rotation: number;
@@ -41,42 +48,82 @@ export const Particle: FunctionComponent<Props> = ({
   );
 
   const [spriteTranslation, setSpriteTranslation] = useState(translate);
-
-  const imageSize = useMemo(() => {
-    return sideSize * SCALE;
-  }, []);
+  const [sourceDimensions, setSourceDiamensions] = useState([0, 0]);
 
   useEffect(() => {
-    const translateX = (translate[0] + mouseTranslate[0]) % imageSize;
-    const translateY = (translate[1] + mouseTranslate[1]) % imageSize;
+    // document.addEventListener("mouseover", getInitialMousePosition);
+    const loader = new Loader();
+    loader.add(source);
+    loader.load((res) => {
+      try {
+        const sourceKey = Object.keys(res.resources)[0];
+        const sourceLoaded = res.resources[sourceKey];
+        setSourceDiamensions([
+          sourceLoaded.data.width,
+          sourceLoaded.data.height,
+        ]);
+      } catch (error) {
+        console.error("error while loading sprite", error);
+      }
+    });
+  }, []);
 
-    setSpriteTranslation([translateX, translateY]);
+  const imageSize = useMemo(() => {
+    return [
+      sourceDimensions[0] * IMAGE_SCALE,
+      sourceDimensions[1] * IMAGE_SCALE,
+    ];
+  }, [sourceDimensions]);
+
+  useEffect(() => {
+    if (imageSize[0] > 0 && imageSize[1] > 0) {
+      const translateX = (translate[0] + mouseTranslate[0]) % imageSize[0];
+      const translateY = (translate[1] + mouseTranslate[1]) % imageSize[1];
+      setSpriteTranslation([translateX, translateY]);
+    }
   }, [imageSize, mouseTranslate, translate]);
 
   const uvGridMatrix = useMemo(() => {
-    const gridSize = Math.ceil(sideSize / imageSize) + 2; //2 extra sprite for margin transition
-    const uv = [] as [number, number][];
-    for (let u = -gridSize; u < gridSize; u++) {
-      for (let v = -gridSize; v < gridSize; v++) {
-        uv.push([u - 1, v - 1]);
+    if (imageSize[0] > 0 && imageSize[1] > 0) {
+      const gridSize =
+        Math.ceil(sideSize / Math.min(imageSize[0], imageSize[1])) + 2; //2 extra sprite for margin transition
+      const uv = [] as [number, number][];
+      for (let u = -gridSize; u < gridSize; u++) {
+        for (let v = -gridSize; v < gridSize; v++) {
+          uv.push([u - 1, v - 1]);
+        }
       }
+      return uv;
     }
-    return uv;
+    return [];
   }, [imageSize]);
-
+  const [imageRotation, setImageRotation] = useState(0);
+  const rotateImage = useCallback(() => {
+    setImageRotation((c) => c + degreesToRadians(IMAGE_ROTATION_SPEED));
+  }, []);
+  useTick(rotateImage);
+  if (sourceDimensions[0] === 0) {
+    return null;
+  }
   return (
     <Container mask={maskRef?.current} rotation={rotation} scale={[1, flip]}>
       <Graphics name="mask" draw={draw} ref={maskRef} />
-      <Container rotation={degreesToRadians(ROTATION)} anchor={0.5}>
+      <Container
+        rotation={degreesToRadians(IMAGE_ROTATION) + imageRotation}
+        anchor={0}
+      >
         {uvGridMatrix.map((matrix, key) => {
           return (
             <Sprite
               image={source}
-              x={spriteTranslation[0] + matrix[0] * imageSize}
-              y={spriteTranslation[1] + matrix[1] * imageSize}
-              width={imageSize}
-              height={imageSize}
+              position={[
+                spriteTranslation[0] + matrix[0] * imageSize[0],
+                spriteTranslation[1] + matrix[1] * imageSize[1],
+              ]}
+              width={imageSize[0]}
+              height={imageSize[1]}
               key={`${matrix[0]}${matrix[1]}${key}`}
+              anchor={[IMAGE_ANCHOR_X, IMAGE_ANCHOR_Y]}
             />
           );
         })}

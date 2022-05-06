@@ -1,13 +1,10 @@
 import { Container, useTick } from "@inlet/react-pixi";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  PARTS,
-  ROTATION_SPEED,
-  ROTATION,
-  TRANSLATION_SPEED_X,
-  TRANSLATION_SPEED_Y,
-  ANCHOR_X,
-  ANCHOR_Y,
+  KALEIDOSCOPE_SLICES,
+  KALEIDOSCOPE_ROTATION_SPEED,
+  IMAGE_TRANSLATION_SPEED_X,
+  IMAGE_TRANSLATION_SPEED_Y,
 } from "./config";
 import { degreesToRadians } from "./math";
 import { Particle } from "./Particle";
@@ -17,12 +14,12 @@ export const Kaleidoscope = () => {
   const [translation, setTranslation] = useState([0, 0]);
   const [mouseTranslate, setMouseTranslation] = useState([0, 0]);
   const stepPart = useMemo(() => {
-    return degreesToRadians(360 / PARTS);
+    return degreesToRadians(360 / KALEIDOSCOPE_SLICES);
   }, []);
 
   const reflections = useMemo(() => {
     const parts = [] as number[];
-    for (let i = 0; i < PARTS; i++) {
+    for (let i = 0; i < KALEIDOSCOPE_SLICES; i++) {
       parts.push(i * stepPart);
     }
     return parts;
@@ -30,12 +27,12 @@ export const Kaleidoscope = () => {
 
   const updateKaleidoscope = useCallback(() => {
     setRotation((current) => {
-      return current + Math.PI * ROTATION_SPEED;
+      return current + Math.PI * KALEIDOSCOPE_ROTATION_SPEED;
     });
     setTranslation((current) => {
       return [
-        current[0] + TRANSLATION_SPEED_X,
-        current[1] - TRANSLATION_SPEED_Y,
+        current[0] + IMAGE_TRANSLATION_SPEED_X,
+        current[1] - IMAGE_TRANSLATION_SPEED_Y,
       ];
     });
   }, []);
@@ -58,13 +55,13 @@ export const Kaleidoscope = () => {
   }, [changeTranslate, getInitialMousePosition]);
 
   return (
-    <Container position={[0, 0]}>
+    <Container>
       {reflections.map((stepRotation) => {
         return (
           <Particle
             rotation={rotation + stepRotation}
             flip={1}
-            translate={[translation[0] + ANCHOR_X, translation[1] + ANCHOR_Y]}
+            translate={[translation[0], translation[1]]}
             mouseTranslate={mouseTranslate}
             stepPart={stepPart / 2}
             key={`${stepRotation}|1`}
@@ -76,7 +73,7 @@ export const Kaleidoscope = () => {
           <Particle
             rotation={rotation + stepRotation}
             flip={-1}
-            translate={[translation[0] + ANCHOR_X, translation[1] + ANCHOR_Y]}
+            translate={[translation[0], translation[1]]}
             mouseTranslate={mouseTranslate}
             stepPart={stepPart / 2}
             key={`${stepRotation}|-1`}
