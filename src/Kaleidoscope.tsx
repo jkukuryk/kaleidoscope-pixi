@@ -11,6 +11,8 @@ import { Particle } from "./Particle";
 
 export const Kaleidoscope = () => {
   const [rotation, setRotation] = useState(0);
+  const [tick, setTick] = useState(0);
+  const [delta, setDelta] = useState(0);
   const [translation, setTranslation] = useState([0, 0]);
   const [mouseTranslate, setMouseTranslation] = useState([0, 0]);
   const stepPart = useMemo(() => {
@@ -25,7 +27,7 @@ export const Kaleidoscope = () => {
     return parts;
   }, [stepPart]);
 
-  const updateKaleidoscope = useCallback(() => {
+  const updateKaleidoscope = useCallback((delta) => {
     setRotation((current) => {
       return current + Math.PI * KALEIDOSCOPE_ROTATION_SPEED;
     });
@@ -35,6 +37,8 @@ export const Kaleidoscope = () => {
         current[1] - IMAGE_TRANSLATION_SPEED_Y,
       ];
     });
+    setTick((c) => c + 1);
+    setDelta(delta);
   }, []);
   useTick(updateKaleidoscope);
 
@@ -65,6 +69,8 @@ export const Kaleidoscope = () => {
             mouseTranslate={mouseTranslate}
             stepPart={stepPart / 2}
             key={`${stepRotation}|1`}
+            tick={tick}
+            delta={delta}
           />
         );
       })}
@@ -77,6 +83,8 @@ export const Kaleidoscope = () => {
             mouseTranslate={mouseTranslate}
             stepPart={stepPart / 2}
             key={`${stepRotation}|-1`}
+            tick={tick}
+            delta={delta}
           />
         );
       })}

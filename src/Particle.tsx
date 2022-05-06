@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, useTick } from "@inlet/react-pixi";
+import { Container, Graphics, Sprite } from "@inlet/react-pixi";
 import source from "./assets/source2.jpg";
 import {
   FunctionComponent,
@@ -15,6 +15,7 @@ import {
   IMAGE_ANCHOR_Y,
   IMAGE_ROTATION,
   IMAGE_ROTATION_SPEED,
+  IMAGE_ROTATION_ANGLE,
   IMAGE_SCALE,
 } from "./config";
 import { Loader } from "@pixi/loaders";
@@ -22,7 +23,8 @@ import { Loader } from "@pixi/loaders";
 type Props = {
   rotation: number;
   stepPart: number;
-
+  tick: number;
+  delta: number;
   flip: -1 | 1;
   translate: number[];
   mouseTranslate: number[];
@@ -33,6 +35,8 @@ export const Particle: FunctionComponent<Props> = ({
   translate,
   stepPart,
   mouseTranslate,
+  tick,
+  delta,
 }) => {
   const maskRef = useRef(null);
   const draw = useCallback(
@@ -98,10 +102,14 @@ export const Particle: FunctionComponent<Props> = ({
     return [];
   }, [imageSize]);
   const [imageRotation, setImageRotation] = useState(0);
-  const rotateImage = useCallback(() => {
-    setImageRotation((c) => c + degreesToRadians(IMAGE_ROTATION_SPEED));
+  const rotateImage = useCallback((delta) => {
+    const addAngle = IMAGE_ROTATION_ANGLE * IMAGE_ROTATION_SPEED * delta;
+    setImageRotation((c) => c + degreesToRadians(addAngle));
   }, []);
-  useTick(rotateImage);
+  useEffect(() => {
+    rotateImage(delta);
+  }, [tick, delta, rotateImage]);
+
   if (sourceDimensions[0] === 0) {
     return null;
   }
@@ -122,8 +130,8 @@ export const Particle: FunctionComponent<Props> = ({
               ]}
               width={imageSize[0]}
               height={imageSize[1]}
-              key={`${matrix[0]}${matrix[1]}${key}`}
-              anchor={[IMAGE_ANCHOR_X, IMAGE_ANCHOR_Y]}
+              key={`${matrix[0]}${matrix[1]}`}
+              anchor={[IMAGE_ANCHOR_X % 1, IMAGE_ANCHOR_Y % 1]}
             />
           );
         })}
