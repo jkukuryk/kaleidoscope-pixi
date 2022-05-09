@@ -10,15 +10,9 @@ import {
 } from "react";
 import { sideSize, viewSize } from "./constants";
 import { degreesToRadians } from "./math";
-import {
-  IMAGE_ANCHOR_X,
-  IMAGE_ANCHOR_Y,
-  IMAGE_ROTATION,
-  IMAGE_ROTATION_SPEED,
-  IMAGE_ROTATION_ANGLE,
-  IMAGE_SCALE,
-} from "./config";
+
 import { Loader } from "@pixi/loaders";
+import { AppConfig, configStore } from "./config";
 
 type Props = {
   rotation: number;
@@ -29,7 +23,10 @@ type Props = {
   translate: number[];
   mouseTranslate: number[];
 };
-export const Particle: FunctionComponent<Props> = ({
+type StoreProps = {
+  store: AppConfig;
+};
+const ParticleComponent: FunctionComponent<Props & StoreProps> = ({
   rotation,
   flip,
   translate,
@@ -37,6 +34,7 @@ export const Particle: FunctionComponent<Props> = ({
   mouseTranslate,
   tick,
   delta,
+  store,
 }) => {
   const maskRef = useRef(null);
   const draw = useCallback(
@@ -75,15 +73,15 @@ export const Particle: FunctionComponent<Props> = ({
 
   const imageSize = useMemo(() => {
     return [
-      sourceDimensions[0] * IMAGE_SCALE,
-      sourceDimensions[1] * IMAGE_SCALE,
+      sourceDimensions[0] * store.imageScale,
+      sourceDimensions[1] * store.imageScale,
     ];
-  }, [sourceDimensions]);
+  }, [sourceDimensions, store.imageScale]);
 
   useEffect(() => {
     if (imageSize[0] > 0 && imageSize[1] > 0) {
-      const translateX = translate[0] * IMAGE_ANCHOR_X + mouseTranslate[0];
-      const translateY = translate[1] * IMAGE_ANCHOR_Y + mouseTranslate[1];
+      const translateX = translate[0] * store.imageAnchorX + mouseTranslate[0];
+      const translateY = translate[1] * store.imageAnchorY + mouseTranslate[1];
 
       setMirrorAxis([
         Math.floor(translateX / imageSize[0]) % 2 === 0 ? -1 : 1,
@@ -95,7 +93,13 @@ export const Particle: FunctionComponent<Props> = ({
         translateY % imageSize[1],
       ]);
     }
-  }, [imageSize, mouseTranslate, translate]);
+  }, [
+    imageSize,
+    mouseTranslate,
+    store.imageAnchorX,
+    store.imageAnchorY,
+    translate,
+  ]);
 
   const uvGridMatrix = useMemo(() => {
     if (imageSize[0] > 0 && imageSize[1] > 0) {
@@ -112,10 +116,14 @@ export const Particle: FunctionComponent<Props> = ({
     return [];
   }, [imageSize]);
   const [imageRotation, setImageRotation] = useState(0);
-  const rotateImage = useCallback((delta) => {
-    const addAngle = IMAGE_ROTATION_ANGLE * IMAGE_ROTATION_SPEED * delta;
-    setImageRotation((c) => c + degreesToRadians(addAngle));
-  }, []);
+  const rotateImage = useCallback(
+    (delta) => {
+      const addAngle =
+        store.imageRotationAngle * store.imageRotationSpeed * delta;
+      setImageRotation((c) => c + degreesToRadians(addAngle));
+    },
+    [store.imageRotationAngle, store.imageRotationSpeed]
+  );
   useEffect(() => {
     rotateImage(delta);
   }, [tick, delta, rotateImage]);
@@ -123,16 +131,11 @@ export const Particle: FunctionComponent<Props> = ({
   if (sourceDimensions[0] === 0) {
     return null;
   }
-  console.log(
-    "spriteTranslation",
-    spriteTranslation[0],
-    spriteTranslation[0] > imageSize[0] / 2
-  );
   return (
     <Container mask={maskRef?.current} rotation={rotation} scale={[1, flip]}>
       <Graphics name="mask" draw={draw} ref={maskRef} />
       <Container
-        rotation={degreesToRadians(IMAGE_ROTATION) + imageRotation}
+        rotation={degreesToRadians(store.imageRotation) + imageRotation}
         anchor={0}
         scale={[1, 1]}
       >
@@ -150,7 +153,7 @@ export const Particle: FunctionComponent<Props> = ({
               height={imageSize[1]}
               key={`${matrix[0]}${matrix[1]}`}
               anchor={0.5}
-              scale={[IMAGE_SCALE * mirrorX, IMAGE_SCALE * mirrorY]}
+              scale={[store.imageScale * mirrorX, store.imageScale * mirrorY]}
             />
           );
         })}
@@ -158,3 +161,6 @@ export const Particle: FunctionComponent<Props> = ({
     </Container>
   );
 };
+export const Particle: FunctionComponent<Props> = (props) => (
+  <ParticleComponent store={configStore} {...props} />
+);

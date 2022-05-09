@@ -1,5 +1,6 @@
 import { Container, Stage } from "@inlet/react-pixi";
 import { useCallback, useEffect, useState } from "react";
+import { ConfigPanel } from "./ConfigPanel";
 import { sideSize, viewSize } from "./constants";
 import { Kaleidoscope } from "./Kaleidoscope";
 
@@ -27,24 +28,27 @@ function App() {
     };
   }, [setViewScale]);
   return (
-    <Stage
-      options={{
-        resolution: window.devicePixelRatio,
-        autoDensity: true,
-        backgroundColor: 0xe6e6e6,
-      }}
-      width={window.innerWidth}
-      height={window.innerHeight}
-    >
-      <Container
-        scale={viewScale}
-        position={[viewTransation[0], viewTransation[1]]}
+    <>
+      <Stage
+        options={{
+          resolution: window.devicePixelRatio,
+          autoDensity: true,
+          backgroundColor: 0xe6e6e6,
+        }}
+        width={window.innerWidth}
+        height={window.innerHeight}
       >
-        <Container position={[sideSize, sideSize]}>
-          <Kaleidoscope />
+        <Container
+          scale={viewScale}
+          position={[viewTransation[0], viewTransation[1]]}
+        >
+          <Container position={[sideSize, sideSize]}>
+            <Kaleidoscope />
+          </Container>
         </Container>
-      </Container>
-    </Stage>
+      </Stage>
+      <ConfigPanel />
+    </>
   );
 }
 
