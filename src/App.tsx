@@ -1,8 +1,8 @@
-import { Container, Stage } from "@inlet/react-pixi";
-import { useCallback, useEffect, useState } from "react";
-import { ConfigPanel } from "./ConfigPanel";
-import { sideSize, viewSize } from "./constants";
-import { Kaleidoscope } from "./Kaleidoscope";
+import { Container, Stage } from '@inlet/react-pixi';
+import { useCallback, useEffect, useState } from 'react';
+import { ConfigPanel } from './ConfigPanel';
+import { sideSize, viewSize } from './constants';
+import { Kaleidoscope } from './Kaleidoscope';
 
 function App() {
   const [viewScale, setViesScale] = useState(1);
@@ -21,10 +21,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    window.addEventListener("resize", setViewScale);
+    window.addEventListener('resize', setViewScale);
     setViewScale();
     return () => {
-      window.removeEventListener("resize", setViewScale);
+      window.removeEventListener('resize', setViewScale);
     };
   }, [setViewScale]);
   return (
@@ -38,10 +38,7 @@ function App() {
         width={window.innerWidth}
         height={window.innerHeight}
       >
-        <Container
-          scale={viewScale}
-          position={[viewTransation[0], viewTransation[1]]}
-        >
+        <Container scale={viewScale} position={[viewTransation[0], viewTransation[1]]}>
           <Container position={[sideSize, sideSize]}>
             <Kaleidoscope />
           </Container>

@@ -72,7 +72,7 @@ const KaleidoscopeComponent: FunctionComponent<{ store: AppConfig }> = observer(
               translate={[translation[0], translation[1]]}
               mouseTranslate={mouseTranslate}
               stepPart={stepPart / 2}
-              key={`${stepRotation}|1`}
+              key={`${stepRotation}${store.factor}|1`}
               tick={tick}
               delta={delta}
             />
@@ -86,7 +86,7 @@ const KaleidoscopeComponent: FunctionComponent<{ store: AppConfig }> = observer(
               translate={[translation[0], translation[1]]}
               mouseTranslate={mouseTranslate}
               stepPart={stepPart / 2}
-              key={`${stepRotation}|-1`}
+              key={`${stepRotation}${store.factor}|-1`}
               tick={tick}
               delta={delta}
             />
